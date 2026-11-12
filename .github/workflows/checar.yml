@@ -1,0 +1,32 @@
+name: Checar mascotes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: PR mexe só em mascotes/
+        if: github.event_name == 'pull_request'
+        run: |
+          fora=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -v '^mascotes/' || true)
+          if [ -n "$fora" ]; then
+            echo "Esta PR mexe em arquivos fora de mascotes/:"
+            echo "$fora"
+            echo "Envie só a pasta do seu mascote. Mudanças nas ferramentas são feitas por quem cuida do repositório."
+            exit 1
+          fi
+      - name: Formato, imagens e licença
+        run: node ferramentas/checar.js
