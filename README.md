@@ -9,7 +9,10 @@ Você pode usar um mascote de dois jeitos:
   ou o `mascote.json` de dentro da pasta. Não precisa enviar nada para cá.
 - **Para todo mundo:** envie uma PR com a pasta do mascote. Depois de aprovado, ele entra no app numa versão nova.
 
-![Gato laranja](mascotes/gato-laranja/parado.png)
+![O Tice, a xícara de chá, mudando de pose](imagens/tice-animado.gif)
+
+Acima, o [Tice](mascotes/tice) trocando de pose como faz no app: pisca, fala (alterna `parado.png` e `falando.png`) e muda
+de humor. O [Gato laranja](mascotes/gato-laranja) é um exemplo mínimo, só com três imagens.
 
 ## Formato (versão 1)
 
