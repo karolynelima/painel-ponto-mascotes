@@ -2,5 +2,15 @@
   "formato": 1,
   "nome": "Tice",
   "autor": "Painel de Ponto",
-  "licenca": "MIT"
+  "licenca": "MIT",
+  "falas": {
+    "feliz": ["Chá quentinho e ponto em dia, {n}!", "Sou de chá, mas acordo cedo pra bater ponto.", "Dois cliques em mim abrem o painel."],
+    "preocupado": ["Tem marcação faltando, {n}. Vamos ver?", "Fiquei até mais amargo com essa pendência…"],
+    "almoco": ["Bom almoço, {n}! Eu fico em infusão aqui."],
+    "dormindo": ["Zzz… chá de camomila e cama, {n}."],
+    "espiando": ["Só dando uma olhadinha nas horas…"],
+    "pouso": ["Cuidado que eu derramo!", "Lugar novo, chá novo!"],
+    "tonto": ["Calma, {n}! Assim o chá vira redemoinho!"],
+    "bravo": ["Ei! Saquinho de chá não é brinquedo, {n}!"]
+  }
 }

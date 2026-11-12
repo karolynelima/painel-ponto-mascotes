@@ -51,6 +51,38 @@ mascotes/gato-laranja/
 
 Se faltar uma pose, o app usa `parado.png` no lugar.
 
+### Falas (opcional)
+
+O mascote pode ter as próprias falas no `mascote.json`. `{n}` vira o primeiro nome de quem usa o app.
+
+```json
+{
+  "formato": 1,
+  "nome": "Tice",
+  "autor": "Painel de Ponto",
+  "licenca": "MIT",
+  "falas": {
+    "feliz": ["Chá quentinho e ponto em dia, {n}!"],
+    "pouso": ["Cuidado que eu derramo!"],
+    "bravo": ["Ei! Saquinho de chá não é brinquedo, {n}!"]
+  }
+}
+```
+
+| Chave | Quando ele fala |
+| --- | --- |
+| `feliz` | Clique nele ou fala solta, com tudo em dia |
+| `preocupado` | Clique ou fala solta, com pendência no ponto |
+| `almoco` | Durante o almoço |
+| `dormindo` | Fora do expediente |
+| `espiando` | Atrás do painel aberto |
+| `pouso` | Logo depois de ser arrastado |
+| `tonto` | Depois de alguns cliques seguidos |
+| `bravo` | Depois de muitos cliques seguidos |
+
+Cada chave é uma lista (até 20 falas, 140 letras cada); o app sorteia uma. A chave que você não puser usa as falas
+padrão. Os avisos do ponto (entrada, almoço, pendências) continuam com o texto do app.
+
 ### Regras
 
 - Só PNG, com transparência. Desenhe o personagem **de pé, encostado na base da imagem**: o app alinha a imagem
