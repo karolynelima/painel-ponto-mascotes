@@ -28,6 +28,9 @@ mascotes/gato-laranja/
   bravo.png       opcional
 ```
 
+Quadros extras, também opcionais, deixam a animação mais fluida: `falando-meio.png`, `surpreso.png`, `frente.png`,
+`agachada.png`, `pendurada.png` e `espiando.png` (veja a tabela abaixo). O app aceita esses quadros a partir da versão 0.13.0; versões anteriores recusam o pacote que os traz.
+
 `mascote.json`:
 
 ```json
@@ -39,6 +42,8 @@ mascotes/gato-laranja/
 }
 ```
 
+`"descricao"` (opcional) é a linha embaixo do nome na lista de mascotes do app; sem ela, aparece "De" e o autor.
+
 | Imagem | Quando aparece |
 | --- | --- |
 | `parado.png` | Sempre que não houver outra pose para o momento |
@@ -48,8 +53,19 @@ mascotes/gato-laranja/
 | `preocupado.png` | Avisos de atenção, espiando atrás do painel, sendo arrastado |
 | `dormindo.png` | Fim do expediente, tontura |
 | `bravo.png` | Quando clicam nele muitas vezes seguidas |
+| `falando-meio.png` | Boca meio aberta: a fala vira fechada → meio → aberta → meio |
+| `surpreso.png` | Avisos de ponto (olhos arregalados) |
+| `frente.png` | No meio da virada, quando o humor troca de lado (veja `"esquerda"`) |
+| `agachada.png` | Um instante antes do pulinho e ao pousar depois de arrastado |
+| `pendurada.png` | Enquanto é arrastado (no lugar de `preocupado.png`) |
+| `espiando.png` | Escondido atrás do painel aberto, no lugar de `preocupado.png`: desenhe só a cabeça saindo de trás de uma quina, com tudo à direita da coluna 310 (de 453 px de largura, 68%) vazio. O app não inclina essa pose |
 
 Se faltar uma pose, o app usa `parado.png` no lugar.
+
+### Lados (opcional)
+
+Se algumas poses olham para o outro lado, liste-as em `"esquerda"` no `mascote.json`, ex.:
+`"esquerda": ["feliz", "dormindo", "bravo"]`. Com `frente.png`, a troca de lado passa por ela em vez de virar de uma vez.
 
 ### Falas (opcional)
 

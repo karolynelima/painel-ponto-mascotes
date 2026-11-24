@@ -2,11 +2,22 @@
  * Pacotes de mascote: qualquer pessoa pode criar um mascote só com imagens PNG e um mascote.json.
  *
  * Formato 1 (o mesmo do repositório aberto de mascotes):
- *   mascote.json   { "formato": 1, "nome": "Meu gato", "autor": "opcional", "licenca": "opcional" }
+ *   mascote.json   { "formato": 1, "nome": "Meu gato", "autor": "opcional", "licenca": "opcional", "descricao": "opcional" }
+ *                  "descricao" é a linha embaixo do nome na lista de mascotes (sem ela, aparece "De <autor>").
  *   parado.png     obrigatório: a pose de sempre
  *   falando.png    boca aberta (alterna com parado.png enquanto o balão aparece)
  *   piscando.png   olhos fechados (pisca de vez em quando)
  *   feliz.png, preocupado.png, dormindo.png, bravo.png   humores (sem a imagem, usa parado.png)
+ * Quadros que deixam a animação mais fluida (todos opcionais; sem eles, fica como antes):
+ *   falando-meio.png  boca meio aberta: a fala vira fechada → meio → aberta → meio
+ *   surpreso.png      olhos arregalados (avisos de ponto)
+ *   frente.png        de frente: aparece no meio da virada quando o humor troca de lado
+ *   agachada.png      encolhida, antes do pulinho e na aterrissagem depois de arrastar
+ *   pendurada.png     no ar, pernas soltas: enquanto a pessoa arrasta
+ *   espiando.png      atrás do painel aberto, só a cabeça para fora: tudo à direita da coluna 310 (de 453, 68% da
+ *                     largura) fica vazio, é onde está o painel. O app não inclina essa pose.
+ * Lados (opcional, no mascote.json): "esquerda": ["feliz", ...] lista as poses viradas para o outro lado;
+ * com frente.png, a troca entre os lados passa por ela em vez de virar de uma vez.
  *   README.md, LICENSE, *.txt   aceitos e ignorados
  * Falas (opcional, no mascote.json): "falas": { "feliz": ["Oi, {n}!"], "pouso": [...], ... } com as chaves de
  * FALAS_CHAVES. Só texto ({n} vira o primeiro nome); a categoria que vier troca as falas padrão dela.
@@ -21,7 +32,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 
 const FORMATO = 1;
-const POSES = ['parado', 'falando', 'piscando', 'feliz', 'preocupado', 'dormindo', 'bravo'];
+const POSES = ['parado', 'falando', 'piscando', 'feliz', 'preocupado', 'dormindo', 'bravo', 'falando-meio', 'surpreso', 'frente', 'agachada', 'pendurada', 'espiando'];
 const FALAS_CHAVES = ['feliz', 'preocupado', 'almoco', 'dormindo', 'espiando', 'pouso', 'tonto', 'bravo'];
 const LIMITE_FALAS = { porCategoria: 20, tamanho: 140 };
 const LIMITE = { imagem: 1024 * 1024, total: 5 * 1024 * 1024, json: 16 * 1024, lado: 1024, ladoMin: 16, nome: 30, autor: 60 };
@@ -108,6 +119,15 @@ function lerFalas(v) {
   return Object.keys(saida).length ? saida : null;
 }
 
+/** "esquerda" do mascote.json: poses conhecidas, sem repetir (a ordem não importa). */
+function lerEsquerda(v) {
+  if (v == null) return null;
+  if (!Array.isArray(v) || v.some(p => typeof p !== 'string')) falha('"esquerda" precisa ser uma lista de poses, ex.: ["feliz", "bravo"].');
+  const desconhecida = v.find(p => !POSES.includes(p) || p === 'frente');
+  if (desconhecida) falha(`"esquerda" tem uma pose que não existe: "${desconhecida}".`);
+  return v.length ? [...new Set(v)] : null;
+}
+
 const texto = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, max) : '');
 
 /**
@@ -147,9 +167,11 @@ function validar(arquivosBrutos) {
     nome,
     autor: texto(info.autor, LIMITE.autor) || null,
     licenca: texto(info.licenca, LIMITE.autor) || null,
+    descricao: texto(info.descricao, LIMITE.autor) || null,
     poses: POSES.filter(p => quadros[p]),
     quadros,
     falas: lerFalas(info.falas),
+    esquerda: lerEsquerda(info.esquerda),
   };
 }
 
@@ -197,7 +219,7 @@ function listar(raiz, origem) {
   return pastas.flatMap(d => {
     try {
       const m = validar(lerPasta(path.join(raiz, d.name)));
-      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, poses: m.poses, falas: m.falas, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
+      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, descricao: m.descricao, poses: m.poses, falas: m.falas, esquerda: m.esquerda, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
     } catch (err) {
       console.error(`[mascotes] ${d.name} ignorado:`, err.message);
       return [];
@@ -212,7 +234,7 @@ function instalar(raiz, m) {
   const temp = `${destino}.novo`;
   fs.rmSync(temp, { recursive: true, force: true });
   fs.mkdirSync(temp, { recursive: true });
-  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, falas: m.falas || undefined }, null, 2));
+  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, descricao: m.descricao || undefined, falas: m.falas || undefined, esquerda: m.esquerda || undefined }, null, 2));
   m.poses.forEach(p => fs.writeFileSync(path.join(temp, `${p}.png`), m.quadros[p]));
   fs.rmSync(destino, { recursive: true, force: true });
   fs.renameSync(temp, destino);
