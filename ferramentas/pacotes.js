@@ -27,6 +27,8 @@
  *   README.md, LICENSE, *.txt   aceitos e ignorados
  * Falas (opcional, no mascote.json): "falas": { "feliz": ["Oi, {n}!"], "pouso": [...], ... } com as chaves de
  * FALAS_CHAVES. Só texto ({n} vira o primeiro nome); a categoria que vier troca as falas padrão dela.
+ * Abertura dos avisos (opcional): "abertura": { "acenando": ["Bom dia, {n}! Cadê a entrada?"], ... } com as chaves de
+ * ABERTURA_CHAVES: a primeira linha do balão de cada tipo de aviso (o título e o texto do aviso continuam os do app).
  * Qualquer outro arquivo (script, executável, outra imagem) recusa o pacote: pacote não tem código.
  *
  * Chega como pasta (a pessoa escolhe o mascote.json dentro dela) ou .zip. Os aceitos ficam copiados
@@ -41,6 +43,9 @@ const FORMATO = 1;
 const POSES = ['parado', 'falando', 'piscando', 'feliz', 'preocupado', 'dormindo', 'bravo', 'falando-meio', 'surpreso', 'frente', 'agachada', 'pendurada', 'espiando',
   'danca-1', 'danca-2', 'danca-3', 'danca-4', 'danca-5', 'danca-6', 'danca-7', 'danca-8'];
 const FALAS_CHAVES = ['feliz', 'preocupado', 'almoco', 'dormindo', 'espiando', 'pouso', 'tonto', 'bravo'];
+// Primeira linha do balão dos avisos: pelo humor do aviso (acenando … meta-agua) ou pelo assunto (pausa … prazo).
+const ABERTURA_CHAVES = ['acenando', 'almoco', 'alerta', 'login', 'preocupado', 'feliz', 'festa', 'agua', 'bebendo', 'meta-agua',
+  'pausa', 'pergunta', 'trabalho', 'horas', 'pipes', 'versao', 'prazo'];
 const LIMITE_FALAS = { porCategoria: 20, tamanho: 140 };
 const LIMITE = { imagem: 1024 * 1024, total: 5 * 1024 * 1024, json: 16 * 1024, lado: 1024, ladoMin: 16, nome: 30, autor: 60 };
 const IGNORADOS = /^(readme(\.md|\.txt)?|licen[cs]e(\.md|\.txt)?|[^/]+\.txt|\.ds_store|thumbs\.db)$/i;
@@ -108,15 +113,15 @@ function achatar(arquivos) {
   return saida;
 }
 
-/** Falas do mascote.json: só listas de texto nas chaves conhecidas (o resto é recusado, para o autor saber). */
-function lerFalas(v) {
+/** Falas (ou aberturas) do mascote.json: só listas de texto nas chaves conhecidas (o resto é recusado, para o autor saber). */
+function lerFalas(v, campo = 'falas', chaves = FALAS_CHAVES) {
   if (v == null) return null;
-  if (typeof v !== 'object' || Array.isArray(v)) falha('"falas" precisa ser um objeto, ex.: { "feliz": ["Oi, {n}!"] }.');
+  if (typeof v !== 'object' || Array.isArray(v)) falha(`"${campo}" precisa ser um objeto, ex.: { "feliz": ["Oi, {n}!"] }.`);
   const saida = {};
   for (const [chave, lista] of Object.entries(v)) {
-    if (!FALAS_CHAVES.includes(chave)) falha(`Fala de um momento que o app não conhece: "${chave}". Use ${FALAS_CHAVES.join(', ')}.`);
-    if (!Array.isArray(lista) || lista.some(f => typeof f !== 'string')) falha(`"falas.${chave}" precisa ser uma lista de textos.`);
-    if (lista.length > LIMITE_FALAS.porCategoria) falha(`"falas.${chave}" tem mais de ${LIMITE_FALAS.porCategoria} falas.`);
+    if (!chaves.includes(chave)) falha(`"${campo}" de um momento que o app não conhece: "${chave}". Use ${chaves.join(', ')}.`);
+    if (!Array.isArray(lista) || lista.some(f => typeof f !== 'string')) falha(`"${campo}.${chave}" precisa ser uma lista de textos.`);
+    if (lista.length > LIMITE_FALAS.porCategoria) falha(`"${campo}.${chave}" tem mais de ${LIMITE_FALAS.porCategoria} falas.`);
     const limpas = lista.map(f => texto(f, Infinity));
     const longa = limpas.find(f => f.length > LIMITE_FALAS.tamanho);
     if (longa) falha(`Fala longa demais (máximo ${LIMITE_FALAS.tamanho} letras): "${longa.slice(0, 40)}…"`);
@@ -197,6 +202,7 @@ function validar(arquivosBrutos) {
     poses: POSES.filter(p => quadros[p]),
     quadros,
     falas: lerFalas(info.falas),
+    abertura: lerFalas(info.abertura, 'abertura', ABERTURA_CHAVES),
     esquerda: lerEsquerda(info.esquerda),
     danca: lerDanca(info.danca, quadros),
   };
@@ -246,7 +252,7 @@ function listar(raiz, origem) {
   return pastas.flatMap(d => {
     try {
       const m = validar(lerPasta(path.join(raiz, d.name)));
-      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, descricao: m.descricao, poses: m.poses, falas: m.falas, esquerda: m.esquerda, danca: m.danca, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
+      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, descricao: m.descricao, poses: m.poses, falas: m.falas, abertura: m.abertura, esquerda: m.esquerda, danca: m.danca, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
     } catch (err) {
       console.error(`[mascotes] ${d.name} ignorado:`, err.message);
       return [];
@@ -261,7 +267,7 @@ function instalar(raiz, m) {
   const temp = `${destino}.novo`;
   fs.rmSync(temp, { recursive: true, force: true });
   fs.mkdirSync(temp, { recursive: true });
-  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, descricao: m.descricao || undefined, falas: m.falas || undefined, esquerda: m.esquerda || undefined, danca: m.danca || undefined }, null, 2));
+  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, descricao: m.descricao || undefined, falas: m.falas || undefined, abertura: m.abertura || undefined, esquerda: m.esquerda || undefined, danca: m.danca || undefined }, null, 2));
   m.poses.forEach(p => fs.writeFileSync(path.join(temp, `${p}.png`), m.quadros[p]));
   fs.rmSync(destino, { recursive: true, force: true });
   fs.renameSync(temp, destino);
@@ -274,4 +280,4 @@ function remover(raiz, id) {
   return true;
 }
 
-module.exports = { FORMATO, POSES, FALAS_CHAVES, LIMITE_FALAS, LIMITE, ErroPacote, validar, lerZip, lerEscolhido, lerPasta, listar, instalar, remover, idDe, medidasPng, dataUrl, ID_VALIDO };
+module.exports = { FORMATO, POSES, FALAS_CHAVES, ABERTURA_CHAVES, LIMITE_FALAS, LIMITE, ErroPacote, validar, lerZip, lerEscolhido, lerPasta, listar, instalar, remover, idDe, medidasPng, dataUrl, ID_VALIDO };

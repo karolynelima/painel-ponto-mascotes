@@ -114,7 +114,32 @@ O mascote pode ter as próprias falas no `mascote.json`. `{n}` vira o primeiro n
 | `bravo` | Depois de muitos cliques seguidos |
 
 Cada chave é uma lista (até 20 falas, 140 letras cada); o app sorteia uma. A chave que você não puser usa as falas
-padrão. Os avisos do ponto (entrada, almoço, pendências) continuam com o texto do app.
+padrão.
+
+### Abertura dos avisos (opcional)
+
+A primeira linha do balão de cada aviso também pode ter a voz do mascote, em `"abertura"` (mesmas regras das falas).
+O título e o texto do aviso continuam os do app.
+
+```json
+"abertura": {
+  "acenando": ["Bom dia, {n}! Chegou e não bateu o ponto?"],
+  "horas": ["Psiu, {n}! Faltou lançar horas."]
+}
+```
+
+| Chave | Aviso |
+| --- | --- |
+| `acenando` | Entrada ainda não batida |
+| `almoco` | Fim do almoço chegando |
+| `alerta` | Aviso geral |
+| `login` | Login do Kairos ou do Orbit expirou |
+| `preocupado` | Pendência no ponto |
+| `feliz` / `festa` | Coisa boa / comemoração (dia fechado, ciclo sem pendências) |
+| `agua` / `bebendo` / `meta-agua` | Lembrete de água, copo registrado, meta do dia batida |
+| `pausa` / `pergunta` | Lembrete de pausa / pergunta sobre a pausa |
+| `trabalho` / `horas` / `pipes` | Azure: item novo, task sem horas, pipeline esperando aprovação |
+| `versao` / `prazo` | Versão nova do app / prazo do fechamento |
 
 ### Regras
 
