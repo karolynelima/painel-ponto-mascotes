@@ -29,7 +29,7 @@ mascotes/gato-laranja/
 ```
 
 Quadros extras, também opcionais, deixam a animação mais fluida: `falando-meio.png`, `surpreso.png`, `frente.png`,
-`agachada.png`, `pendurada.png` e `espiando.png` (veja a tabela abaixo). O app aceita esses quadros a partir da versão 0.13.0; versões anteriores recusam o pacote que os traz.
+`agachada.png`, `pendurada.png`, `espiando.png` e os quadros de dança (veja a tabela e a seção Dança abaixo). O app aceita esses quadros a partir da versão 0.13.0; versões anteriores recusam o pacote que os traz.
 
 `mascote.json`:
 
@@ -61,6 +61,23 @@ Quadros extras, também opcionais, deixam a animação mais fluida: `falando-mei
 | `espiando.png` | Escondido atrás do painel aberto, no lugar de `preocupado.png`: desenhe só a cabeça saindo de trás de uma quina, com tudo à direita da coluna 310 (de 453 px de largura, 68%) vazio. O app não inclina essa pose |
 
 Se faltar uma pose, o app usa `parado.png` no lugar.
+
+### Dança (opcional, app 0.14.0 em diante)
+
+Quadros `danca-1.png` a `danca-8.png` e, no `mascote.json`, a ordem em que tocam e quanto dura cada passo:
+
+```json
+"danca": {
+  "passos": ["danca-1", "danca-2", "danca-1", "danca-2"],
+  "ms": [500, 500, 340, 280]
+}
+```
+
+- `passos`: de 2 a 32, só quadros `danca-N` que o pacote tem.
+- `ms`: um número (o mesmo tempo para todos os passos; a sequência toca duas vezes) ou uma lista com um tempo para cada passo (de 120 a 800 ms; a lista é a dança inteira e toca uma vez). Use a lista para começar devagar e acelerar.
+- O mascote dança quando marca a entrada, quando bate a meta da água e, no modo "Agitado", de vez em quando. Nunca atrás do painel aberto.
+- Desenhe os quadros do mesmo tamanho e com os pés na mesma linha das outras poses. `danca-1` e `danca-2` ganham um giro leve pelos pés (um para cada lado): um passo e o espelho dele já fazem uma boa dança.
+- Versões do app anteriores a 0.14.0 recusam o pacote que traz esses quadros.
 
 ### Lados (opcional)
 

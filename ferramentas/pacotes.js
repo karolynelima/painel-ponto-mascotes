@@ -16,6 +16,12 @@
  *   pendurada.png     no ar, pernas soltas: enquanto a pessoa arrasta
  *   espiando.png      atrás do painel aberto, só a cabeça para fora: tudo à direita da coluna 310 (de 453, 68% da
  *                     largura) fica vazio, é onde está o painel. O app não inclina essa pose.
+ *   danca-1.png … danca-8.png   quadros de uma dança, tocados em sequência (veja "danca" abaixo)
+ * Dança (opcional, no mascote.json): "danca": { "passos": ["danca-1", "danca-2", ...], "ms": 260 } é a ordem dos
+ * quadros (de 2 a 32 passos, só quadros danca-N que o pacote tem) e quanto dura cada um (de 120 a 800 ms).
+ * "ms" também pode ser uma lista, uma duração por passo (ex.: começa devagar e acelera): aí a lista de passos é a
+ * dança inteira, tocada uma vez só.
+ * Sem ela, o mascote faz a dancinha de sempre (o desenho todo balança).
  * Lados (opcional, no mascote.json): "esquerda": ["feliz", ...] lista as poses viradas para o outro lado;
  * com frente.png, a troca entre os lados passa por ela em vez de virar de uma vez.
  *   README.md, LICENSE, *.txt   aceitos e ignorados
@@ -32,7 +38,8 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 
 const FORMATO = 1;
-const POSES = ['parado', 'falando', 'piscando', 'feliz', 'preocupado', 'dormindo', 'bravo', 'falando-meio', 'surpreso', 'frente', 'agachada', 'pendurada', 'espiando'];
+const POSES = ['parado', 'falando', 'piscando', 'feliz', 'preocupado', 'dormindo', 'bravo', 'falando-meio', 'surpreso', 'frente', 'agachada', 'pendurada', 'espiando',
+  'danca-1', 'danca-2', 'danca-3', 'danca-4', 'danca-5', 'danca-6', 'danca-7', 'danca-8'];
 const FALAS_CHAVES = ['feliz', 'preocupado', 'almoco', 'dormindo', 'espiando', 'pouso', 'tonto', 'bravo'];
 const LIMITE_FALAS = { porCategoria: 20, tamanho: 140 };
 const LIMITE = { imagem: 1024 * 1024, total: 5 * 1024 * 1024, json: 16 * 1024, lado: 1024, ladoMin: 16, nome: 30, autor: 60 };
@@ -128,6 +135,25 @@ function lerEsquerda(v) {
   return v.length ? [...new Set(v)] : null;
 }
 
+/** "danca" do mascote.json: a ordem dos quadros danca-N (que o pacote precisa ter) e a duração de cada passo. */
+function lerDanca(v, quadros) {
+  if (v == null) return null;
+  if (typeof v !== 'object' || Array.isArray(v) || !Array.isArray(v.passos)) falha('"danca" precisa ser { "passos": ["danca-1", "danca-2"], "ms": 260 }.');
+  if (v.passos.length < 2 || v.passos.length > 32) falha('"danca.passos" precisa ter de 2 a 32 passos.');
+  const errado = v.passos.find(p => typeof p !== 'string' || !/^danca-[1-8]$/.test(p));
+  if (errado !== undefined) falha(`"danca.passos" só aceita danca-1 a danca-8: "${errado}".`);
+  const falta = v.passos.find(p => !quadros[p]);
+  if (falta) falha(`"danca.passos" usa ${falta}.png, mas o pacote não tem essa imagem.`);
+  const ms = v.ms == null ? 260 : v.ms;
+  const valido = n => typeof n === 'number' && n >= 120 && n <= 800;
+  if (Array.isArray(ms)) {
+    if (ms.length !== v.passos.length || !ms.every(valido)) falha('"danca.ms" em lista precisa ter um número de 120 a 800 para cada passo.');
+    return { passos: [...v.passos], ms: ms.map(Math.round) };
+  }
+  if (!valido(ms)) falha('"danca.ms" precisa ser um número de 120 a 800.');
+  return { passos: [...v.passos], ms: Math.round(ms) };
+}
+
 const texto = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, max) : '');
 
 /**
@@ -172,6 +198,7 @@ function validar(arquivosBrutos) {
     quadros,
     falas: lerFalas(info.falas),
     esquerda: lerEsquerda(info.esquerda),
+    danca: lerDanca(info.danca, quadros),
   };
 }
 
@@ -219,7 +246,7 @@ function listar(raiz, origem) {
   return pastas.flatMap(d => {
     try {
       const m = validar(lerPasta(path.join(raiz, d.name)));
-      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, descricao: m.descricao, poses: m.poses, falas: m.falas, esquerda: m.esquerda, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
+      return [{ id: d.name, origem, nome: m.nome, autor: m.autor, descricao: m.descricao, poses: m.poses, falas: m.falas, esquerda: m.esquerda, danca: m.danca, quadros: Object.fromEntries(m.poses.map(p => [p, dataUrl(m.quadros[p])])) }];
     } catch (err) {
       console.error(`[mascotes] ${d.name} ignorado:`, err.message);
       return [];
@@ -234,7 +261,7 @@ function instalar(raiz, m) {
   const temp = `${destino}.novo`;
   fs.rmSync(temp, { recursive: true, force: true });
   fs.mkdirSync(temp, { recursive: true });
-  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, descricao: m.descricao || undefined, falas: m.falas || undefined, esquerda: m.esquerda || undefined }, null, 2));
+  fs.writeFileSync(path.join(temp, 'mascote.json'), JSON.stringify({ formato: FORMATO, nome: m.nome, autor: m.autor || undefined, licenca: m.licenca || undefined, descricao: m.descricao || undefined, falas: m.falas || undefined, esquerda: m.esquerda || undefined, danca: m.danca || undefined }, null, 2));
   m.poses.forEach(p => fs.writeFileSync(path.join(temp, `${p}.png`), m.quadros[p]));
   fs.rmSync(destino, { recursive: true, force: true });
   fs.renameSync(temp, destino);
